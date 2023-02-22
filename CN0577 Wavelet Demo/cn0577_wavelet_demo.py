@@ -33,31 +33,45 @@
 #
 # AUTHOR: TRISHA CABILDO
 
-from scipy import signal
-import matplotlib.pyplot as plt
+import os
+import sys
+import time
+import math
+import numpy as np
+from adi import ltc2387
+from wavelet_gen import random_ricker, wavdiff_out, wav_init, wav_close, wav_gen_main
+from scipy.signal import cwt
 
-points = 1000
-a = 15.0
-vcm = 2.048
-vpp = 0.5 
+n_samples = 256000                                                                              #Number of samples taken
+sampling_freq = 10000000                                                                        #Master clock @120 MHz (f_sampling = master_clock / 12)
+vref = 4.096                                                                                    #From REFBUF pin of LTC2387
 
-# Creating the ricker wavelet
-vec1 = signal.ricker(points, a)
+#This function sets up the ADC
+def setup_adc(my_ip):
+    my_adc = ltc2387(uri=my_ip)
+    my_adc.rx_buffer_size = n_samples
+    my_adc.sampling_frequency = sampling_freq
 
-# Make amplitude smaller
-vec3 = vpp * vec1
-# Create an inverse signal of vec3
-vec4 = vec3 * -1
+    return my_adc
 
-# Adjust DC level of differential signal to LTC2387's VCM
-vec2 = vcm + vec3
-vec5 = vcm + vec4
+def adc_capture(my_adc):
+    adc_data = my_adc.rx()
+    time.sleep(2)
 
-# Difference of the two signals
-vec6 = vec2 - vec5
+    return adc_data
 
-# Plot the ricker wavelet
-plt.plot(vec2)
-plt.plot(vec5)
-plt.plot(vec6)
-plt.show()
+def main():
+    my_adc = setup_adc()
+    m2k_ctx = wav_gen_main()
+    adc_data = adc_capture()
+
+    return m2k_ctx
+
+if __name__ == '__main__':
+    print("ADI packages import done")
+    hardcoded_ip = 'ip:localhost'
+    my_ip = sys.argv[2] if len(sys.argv) >= 3 else hardcoded_ip
+    print("\nConnecting with CN0577 context at %s" % (my_ip))
+
+    m2k_ctx = main()
+    wav_close(m2k_ctx)

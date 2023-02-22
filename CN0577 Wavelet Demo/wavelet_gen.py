@@ -33,23 +33,20 @@
 #
 # AUTHOR: TRISHA CABILDO
 
-import os
 import sys
 import libm2k
 import numpy as np
-
 from scipy.signal import periodogram,find_peaks,ricker, resample
 import matplotlib.pyplot as plt
-from scipy import signal
 
 #Samples per second
-sr = 7500000                                                # Sample rate
-N = 750000                                                  # Number of samples
+sr = 7500000                                                    # Sample rate
+N = 750000                                                      # Number of samples
 t = np.arange(0,1,1/N)
-vcm = 2.048                                                 # VCM of LT2387 (2.048 V default)
+vcm = 2.048                                                     # VCM of LT2387 (2.048 V default)
 
 available_sample_rates= [750, 7500, 75000, 750000, 7500000, 75000000]
-max_rate = available_sample_rates[-1] # last sample rate = max rate
+max_rate = available_sample_rates[-1]                           # last sample rate = max rate
 min_nr_of_points=10
 max_buffer_size = 500000
 
@@ -67,16 +64,15 @@ def wav_close(ctx):
     del ctx
 
 def random_ricker():
-    vpp = 0.5                                               # Peak to peak amplitude of wavelet
-    n_peak = 2                                               # Number of wavelet peaks
-    n_points = int(N/n_peak)                                # Number of points per wavelet
-    print(n_points)
+    vpp = 0.5                                                    # Peak to peak amplitude of wavelet
+    n_peak = 2                                                   # Number of wavelet peaks
+    n_points = int(N/n_peak)                                     # Number of points per wavelet
     
-    width_param = int(n_points*.05*np.random.random())      # 5% width parameter                                             
-    x = ricker(n_points,width_param*np.random.random())     # Generate wavelet
-    v_scale = vpp/(np.max(x)-np.min(x))/2                   # Scale to fit vpp
-    x = x*v_scale
-    rick_offset = 0 - np.min(x)
+    width_param = int(n_points * 0.05 * np.random.random())      # 5% width parameter; Randomizes the width of the wavelet                                             
+    x = ricker(n_points, width_param * np.random.random())       # Generate wavelet
+    v_scale = vpp/(np.max(x)-np.min(x))/2                        # Scale to fit vpp
+    x = x * v_scale
+    rick_offset = 0 - np.min(x)                             
     x = x + rick_offset
 
     if n_peak > 1:
@@ -85,6 +81,7 @@ def random_ricker():
             ricker_wav= np.concatenate((ricker_wav,x))
     else:
         ricker_wav = x
+
     return x - np.average(x)
 
 def ricker_gen():
@@ -138,22 +135,24 @@ def wavdiff_out(ctx):
     w1_data = rnd_ricker + vcm
     w2_data = vcm - rnd_ricker
 
-    plt.plot(w1_data)
-    plt.plot(w2_data)
-    plt.plot(w1_data-w2_data)
-    plt.show()
+    # plt.plot(w1_data)
+    # plt.plot(w2_data)
+    # plt.plot(w1_data-w2_data)
+    # plt.show()
 
     buffer = [w1_data, w2_data]
 
     aout.setCyclic(True)
     aout.push(buffer)
     print("Wavelet Generated")
-    wav_close(ctx)
+    # wav_close(ctx)
 
-def main():
+def wav_gen_main():
     ctx = wav_init()
     while(True):
         wavdiff_out(ctx)
 
+    return ctx
+
 if __name__ == '__main__':
-    main()
+    wav_gen_main()
