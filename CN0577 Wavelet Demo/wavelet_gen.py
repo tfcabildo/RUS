@@ -44,6 +44,7 @@ sr = 7500000                                                    # Sample rate
 N = 750000                                                      # Number of samples
 t = np.arange(0,1,1/N)
 vcm = 2.048                                                     # VCM of LT2387 (2.048 V default)
+l, h = 0, 0.005
 
 available_sample_rates= [750, 7500, 75000, 750000, 7500000, 75000000]
 max_rate = available_sample_rates[-1]                           # last sample rate = max rate
@@ -131,28 +132,41 @@ def wavdiff_out(ctx):
     aout.setSampleRate(1, sr)
     aout.enableChannel(0, True)
     aout.enableChannel(1, True)
+    
     rnd_ricker = random_ricker()
     w1_data = rnd_ricker + vcm
     w2_data = vcm - rnd_ricker
 
-    # plt.plot(w1_data)
-    # plt.plot(w2_data)
-    # plt.plot(w1_data-w2_data)
-    # plt.show()
-
     buffer = [w1_data, w2_data]
-
     aout.setCyclic(True)
     aout.push(buffer)
-    print("Wavelet Generated")
-    # wav_close(ctx)
+    print("Noiseless wavelet generated!")
 
+    return w1_data, w2_data
+
+def plotter(w1_data, w2_data):
+    plt.plot(w1_data)
+    plt.plot(w2_data)
+    plt.plot(w1_data-w2_data)
+    plt.show()
+
+def noise_add(w1, w2):
+    s1 = np.random.uniform(low = l, high = h, size = 375000)
+    s2 = np.random.uniform(low = l, high = h, size = 375000)
+    w1 += s1
+    w2 += s2
+    print("Noisy wavelet generated!")
+
+    return w1, w2
+    
 def wav_gen_main():
     ctx = wav_init()
-    while(True):
-        wavdiff_out(ctx)
-
-    return ctx
+    w1, w2 = wavdiff_out(ctx)
+    plotter(w1, w2)
+    w3, w4 = noise_add(w1, w2)
+    plotter(w3, w4)
+    wav_close(ctx)
 
 if __name__ == '__main__':
-    wav_gen_main()
+   wav_gen_main()
+    
