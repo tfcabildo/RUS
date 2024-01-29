@@ -26,6 +26,7 @@ from pyvirtualbench import PyVirtualBench, PyVirtualBenchException, DmmFunction
 import time
 
 device_name = 'VB8012-32C3456'
+channel = "ps/+25V"
 
 # Replace "myVirtualBench" with the name of your device. The device name is the model number and serial number separated by a hyphen; e.g., "VB8012-309738A".
 # Check the device's name in the VirtualBench Application under File->About
@@ -41,24 +42,30 @@ def set_DC_out(my_supply,chx, v, c):
 
 def print_DC_out(my_supply,chx):
     voltage_measurement, current_measurement, ps_state = my_supply.read_output(chx)
-    print("Measurement: %f V\t%f A\t(%s)" % (voltage_measurement, current_measurement, str(ps_state)))
+    print("PS Measurement: %f V\t%f A\t(%s)" % (voltage_measurement, current_measurement, str(ps_state)))
+    return
+
+def dmm_volt_read(dmm):
+    dmm.configure_measurement(DmmFunction.DC_VOLTS, True, 20.0)
+    time.sleep(2)
+    print("DMM Measurement: %f V" % (dmm.read()))
     return
 
 def main():
     try:
-        # Power Supply Configuration
-        channel = "ps/+25V"
-        voltage_level = 20.0
-        current_limit = 0.5
-
         virtualbench = VB_setup()
         ps = virtualbench.acquire_power_supply()
         dmm = virtualbench.acquire_digital_multimeter()
 
-        set_DC_out(ps,channel,voltage_level,current_limit)
+        # Setting output to 5V
+        set_DC_out(ps,channel,5,0.5)
         print_DC_out(ps,channel)
+        dmm_volt_read(dmm)
+
+        # Setting output to 0V
         set_DC_out(ps,channel,0,0.005)
         print_DC_out(ps,channel)
+        dmm_volt_read(dmm)
         
         ps.release()
     except PyVirtualBenchException as e:
